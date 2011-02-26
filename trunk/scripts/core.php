@@ -16,9 +16,12 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-define("PHPWM_NORMAL", 0);
-define("PHPWM_MAXIMIZED", 1);
-define("PHPWM_MINIMIZED", 2);
+define("PHPWM_STATE_NORMAL", 0);
+define("PHPWM_STATE_MAXIMIZED", 1);
+define("PHPWM_STATE_MINIMIZED", 2);
+
+define("PHPWM_DRAG_NORMAL", 0);
+define("PHPWM_DRAG_DRAGGING", 1);
 
 $core = new phpwm_core();
 class phpwm_core{
@@ -84,6 +87,8 @@ class phpwm_core{
 		phpwm_move_window($arrArgs['window'],rand(0,100), rand(0,100));
 		phpwm_window_border($arrArgs['window'], 6);
 		phpwm_window_subscribe_events($arrArgs['window']);
+		phpwm_set_window_state($arrArgs['window'], PHPWM_STATE_NORMAL);
+		phpwm_set_drag_state($arrArgs['window'], PHPWM_DRAG_NORMAL);
 	}
 	function ConfigureNotify($arrArgs){
 
@@ -104,18 +109,36 @@ class phpwm_core{
 			$this->doubleclick($arrArgs);
 		} else {
 			phpwm_report_button_press($arrArgs['event'], $arrArgs['time']);
+			$this->singleclick($arrArgs);
 		}
 	}
 	function ButtonRelease($arrArgs){
 		phpwm_report_button_release($arrArgs['event'], $arrArgs['time']);
+		if (phpwm_get_drag_state($arrArgs['event'])==PHPWM_DRAG_DRAGGING){
+			phpwm_set_drag_state($arrArgs['event'], PHPWM_DRAG_NORMAL);
+		}
 	}
 	function MotionNotify($arrArgs){
-
+		echo "Motion: event:{$arrArgs['event']} child:{$arrArgs['child']} state: ".phpwm_get_drag_state($arrArgs['event'])."\n";
+		if (phpwm_get_drag_state($arrArgs['event'])==PHPWM_DRAG_DRAGGING){
+			phpwm_move_window($arrArgs['event'], $arrArgs['event_x'], $arrArgs['event_y']);
+		}
+	}
+	function singleclick($arrArgs){
+		//see if the button is still down
+		if (phpwm_get_last_button_release($arrArgs['event']) < phpwm_get_last_button_press($arrArgs['event'])){
+			echo "Button is still down on : {$arrArgs['event']}\n";
+			phpwm_set_drag_state($arrArgs['event'], PHPWM_DRAG_DRAGGING);
+			echo "drag state set to: ".phpwm_get_drag_state($arrArgs['event'])."\n";
+		} else {
+			echo "Button has been released\n";
+			phpwm_set_drag_state($arrArgs['event'], PHPWM_DRAG_NORMAL);
+		}
 	}
 
 	function doubleclick($arrArgs){
 		echo "Double Click Event \n";
-		if (phpwm_get_window_state($arrArgs['event'])==PHPWM_NORMAL){
+		if (phpwm_get_window_state($arrArgs['event'])==PHPWM_STATE_NORMAL){
 			$this->Maximize($arrArgs['event']);
 		} else {
 			$this->restore($arrArgs['event']);
@@ -124,16 +147,17 @@ class phpwm_core{
 
 	function Maximize($intWindowid){
 		echo "set max\n";
-		phpwm_set_window_state($intWindowid, PHPWM_MAXIMIZED);
+		phpwm_set_window_state($intWindowid, PHPWM_STATE_MAXIMIZED);
 		phpwm_resize_window($intWindowid, phpwm_config_width_in_pixels()-12, phpwm_config_height_in_pixels()-12);
 		phpwm_move_window($intWindowid, 0, 0);
 	}
 	function restore($intWindowid){
 		echo "set restored\n";
-		phpwm_set_window_state($intWindowid, PHPWM_NORMAL);
+		phpwm_set_window_state($intWindowid, PHPWM_STATE_NORMAL);
 		phpwm_resize_window($intWindowid, floor(phpwm_config_width_in_pixels()/2), floor(phpwm_config_height_in_pixels()/2));
-		phpwm_move_window($intWindowid, 0, 0);
+		phpwm_move_window($intWindowid, 20, 20);
 	}
+	
 }
 
 ?>

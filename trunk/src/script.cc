@@ -255,8 +255,7 @@ PHP_FUNCTION(phpwm_get_drag_state){
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, (char*)"l", &windownum, &time) == FAILURE) {
 		return;
 	}
-	phpwm_get_drag_state(windownum);
-	RETURN_NULL();
+	RETURN_LONG(phpwm_get_drag_state(windownum));
 }
 
 PHP_FUNCTION(phpwm_set_window_state){
