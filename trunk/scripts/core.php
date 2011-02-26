@@ -139,6 +139,8 @@ class phpwm_core{
 	function doubleclick($arrArgs){
 		echo "Double Click Event \n";
 		if (phpwm_get_window_state($arrArgs['event'])==PHPWM_STATE_NORMAL){
+			var_export($arrArgs);
+			phpwm_set_last_window_pos($arrArgs['event'], 20, 20, 200, 200);
 			$this->Maximize($arrArgs['event']);
 		} else {
 			$this->restore($arrArgs['event']);
@@ -147,12 +149,15 @@ class phpwm_core{
 
 	function Maximize($intWindowid){
 		echo "set max\n";
+		
 		phpwm_set_window_state($intWindowid, PHPWM_STATE_MAXIMIZED);
 		phpwm_resize_window($intWindowid, phpwm_config_width_in_pixels()-12, phpwm_config_height_in_pixels()-12);
 		phpwm_move_window($intWindowid, 0, 0);
 	}
 	function restore($intWindowid){
 		echo "set restored\n";
+		$arrPos = phpwm_get_last_window_pos($intWindowid);
+		var_export($arrPos);
 		phpwm_set_window_state($intWindowid, PHPWM_STATE_NORMAL);
 		phpwm_resize_window($intWindowid, floor(phpwm_config_width_in_pixels()/2), floor(phpwm_config_height_in_pixels()/2));
 		phpwm_move_window($intWindowid, 20, 20);

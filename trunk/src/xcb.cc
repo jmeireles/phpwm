@@ -47,6 +47,7 @@ class class_client {
 	int window_class, currentWindowState, currentDragState;
 	int lastButtonPress;
 	int lastButtonRelease;
+	int lastWindowPos[4];
 
 	void setSize(int width, int height) {
 		phpwm_resize_window((int) window, width, height);
@@ -57,6 +58,15 @@ class class_client {
 	}
 
 public:
+	void setLastWindowPosition(int x, int y, int w, int h){
+		lastWindowPos[0] = x;
+		lastWindowPos[1] = y;
+		lastWindowPos[2] = w;
+		lastWindowPos[3] = h;
+	}
+	int* getLastWindowPosition(){
+		return lastWindowPos;
+	}
 	void setButtonPress(int intTime){
 		lastButtonPress = intTime;
 	}
@@ -396,4 +406,11 @@ int phpwm_get_drag_state(int windowId){
 }
 void phpwm_set_drag_state(int windowId, int state){
 	windowlistmap.find(windowId)->second.setDragState(state);
+}
+
+void phpwm_set_last_window_pos(int windowId, int x, int y, int w, int h){
+	windowlistmap.find(windowId)->second.setLastWindowPosition(x,y,w,h);
+}
+int* phpwm_get_last_window_pos(int windowId){
+	return windowlistmap.find(windowId)->second.getLastWindowPosition();
 }

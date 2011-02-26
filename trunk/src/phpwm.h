@@ -50,6 +50,8 @@ void phpwm_set_drag_state(int, int);
 int phpwm_get_drag_state(int);
 void phpwm_set_window_state(int, int);
 int phpwm_get_window_state(int);
+void phpwm_set_last_window_pos(int, int, int, int, int);
+int* phpwm_get_last_window_pos(int);
 
 void watch_events();
 extern xcb_connection_t *xconnection;

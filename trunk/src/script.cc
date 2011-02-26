@@ -275,6 +275,27 @@ PHP_FUNCTION(phpwm_get_window_state){
 	RETURN_LONG(phpwm_get_window_state(windownum));
 }
 
+PHP_FUNCTION(phpwm_set_last_window_pos){
+	int windownum, x, y, w, h;
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, (char*)"lllll", &windownum, &x, &y, &w, &h) == FAILURE) {
+		return;
+	}
+	phpwm_set_last_window_pos(windownum, x, y, w, h);
+	RETURN_NULL();
+}
+PHP_FUNCTION(phpwm_get_last_window_pos){
+	int windownum, i;
+	int* retval;
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, (char*)"l", &windownum) == FAILURE) {
+		return;
+	}
+	retval = phpwm_get_last_window_pos(windownum);
+	array_init(return_value);
+	for (i=0; i < 4 ; i++) {
+		add_next_index_long(return_value, retval[i]);
+	}
+}
+
 static void log_message(char *message) {
 	cout << "PHP MESSAGE:" << message << endl;
 	/* catch default output for log_errors; these are the messages
@@ -310,6 +331,8 @@ PHP_FE(phpwm_set_drag_state, NULL)
 PHP_FE(phpwm_get_drag_state, NULL)
 PHP_FE(phpwm_set_window_state, NULL)
 PHP_FE(phpwm_get_window_state, NULL)
+PHP_FE(phpwm_set_last_window_pos, NULL)
+PHP_FE(phpwm_get_last_window_pos, NULL)
 {	NULL, NULL, NULL} /* this last null line is important for some reason */
 };
 
