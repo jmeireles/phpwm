@@ -28,11 +28,12 @@ xcb_atom_t atom_desktop;
 
 xcb_atom_t wm_delete_window;
 xcb_atom_t wm_protocols;
+const char* display_string;
 
 class class_client {
 	xcb_window_t window, parent_window, child_window;
 	xcb_get_window_attributes_reply_t *attr;
-	int window_class;
+	int window_class, currentWindowState, currentDragState;
 	int lastButtonPress;
 	int lastButtonRelease;
 
@@ -56,6 +57,18 @@ public:
 	}
 	int getButtonRelease(){
 		return lastButtonRelease;
+	}
+	int getWindowState(){
+		return currentWindowState;
+	}
+	void setWindowState(int state){
+		currentWindowState = state;
+	}
+	int getDragState(){
+		return currentDragState;
+	}
+	void setDragState(int state) {
+		currentDragState = state;
 	}
 	class_client(xcb_window_t c) {
 		window = c;
@@ -116,6 +129,15 @@ WindowMap windowlistmap;
 void destroy() {
 	xcb_disconnect(xconnection);
 }
+void startup_actions(){
+	php_args Args;
+	Args = php_args();
+	Args.add("action", "application_startup");
+	Args.add("root", screen->root);
+	Args.add("display", display_string);
+
+	runscript((char*)"core.php", Args);
+}
 
 int manage() {
 	xcb_query_tree_reply_t *reply;
@@ -155,9 +177,12 @@ int manage() {
 	cookie = xcb_change_window_attributes_checked(xconnection, screen->root, mask, values);
 	error = xcb_request_check(xconnection, cookie);
 	//start looping events;
+	startup_actions();
 	watch_events();
 	return 0;
 }
+
+
 void manageNewWindow(xcb_window_t newscreen) {
 	windowlistmap.insert(pair<int, class_client> (newscreen, newscreen));
 	windowlistmap.find(newscreen)->second.takeOwnership();
@@ -165,6 +190,7 @@ void manageNewWindow(xcb_window_t newscreen) {
 }
 
 int openDisplay(string requestedDisplay) {
+	display_string = requestedDisplay.c_str();
 	xconnection = xcb_connect(requestedDisplay.c_str(), &xnumber);
 	if (xconnection == 0) {
 		std::cout << "Unable to connect to xserver" << endl;
@@ -345,4 +371,18 @@ int phpwm_get_last_button_press(int windowId){
 }
 int phpwm_get_last_button_release(int windowId){
 	return windowlistmap.find(windowId)->second.getButtonRelease();
+}
+
+int phpwm_get_window_state(int windowId){
+	return windowlistmap.find(windowId)->second.getWindowState();
+}
+
+void phpwm_set_window_state(int windowId, int state){
+	windowlistmap.find(windowId)->second.setWindowState(state);
+}
+int phpwm_get_drag_state(int windowId){
+	return windowlistmap.find(windowId)->second.getDragState();
+}
+void phpwm_set_drag_state(int windowId, int state){
+	windowlistmap.find(windowId)->second.setDragState(state);
 }

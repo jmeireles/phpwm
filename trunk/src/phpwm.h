@@ -29,6 +29,11 @@ int phpwm_report_button_press(int, int);
 int phpwm_report_button_release(int, int);
 int phpwm_get_last_button_press(int);
 int phpwm_get_last_button_release(int);
+void phpwm_set_drag_state(int, int);
+int phpwm_get_drag_state(int);
+void phpwm_set_window_state(int, int);
+int phpwm_get_window_state(int);
+
 void watch_events();
 extern xcb_connection_t *xconnection;
 void event_exposure(xcb_generic_event_t*);

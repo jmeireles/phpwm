@@ -20,10 +20,11 @@ int main(int argc, char **argv) {
 	   cout << "requestedDisplay = " << requestedDisplay << endl;
 
 	if (openDisplay(requestedDisplay)==0) {
-		std::cout << "Running" << endl;
+		std::cout << "unable to connect to requested display" << endl;
 //		execute_test(argc, argv);
 		//start our main loop
 	} else {
+		//TODO: any cleanup code here.
 		std::cout << "phpwm shutting down, unable to open display " << endl;
 	}
 	destroy();

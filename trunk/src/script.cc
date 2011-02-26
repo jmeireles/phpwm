@@ -43,7 +43,6 @@ public:
 		}
 	}
 	void addElement(zval*& ARR, char* key, char* val) {
-		cout << "adding ARR[" << key << "]=" << val << endl;
 		zval *new_element;
 		MAKE_STD_ZVAL(new_element);
 		ZVAL_STRING(new_element, val, 1);
@@ -231,6 +230,41 @@ PHP_FUNCTION(phpwm_get_last_button_release){
 	RETURN_LONG(phpwm_get_last_button_release(windownum));
 }
 
+PHP_FUNCTION(phpwm_set_drag_state){
+	int windownum, state;
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, (char*)"ll", &windownum, &state) == FAILURE) {
+		return;
+	}
+	phpwm_set_drag_state(windownum, state);
+	RETURN_NULL();
+}
+
+PHP_FUNCTION(phpwm_get_drag_state){
+	int windownum;
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, (char*)"l", &windownum, &time) == FAILURE) {
+		return;
+	}
+	phpwm_get_drag_state(windownum);
+	RETURN_NULL();
+}
+
+PHP_FUNCTION(phpwm_set_window_state){
+	int windownum, state;
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, (char*)"ll", &windownum, &state) == FAILURE) {
+		return;
+	}
+	phpwm_set_window_state(windownum, state);
+	RETURN_NULL();
+}
+
+PHP_FUNCTION(phpwm_get_window_state){
+	int windownum;
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, (char*)"l", &windownum, &time) == FAILURE) {
+		return;
+	}
+	RETURN_LONG(phpwm_get_window_state(windownum));
+}
+
 static void log_message(char *message) {
 	cout << "PHP MESSAGE:" << message << endl;
 	/* catch default output for log_errors; these are the messages
@@ -262,7 +296,11 @@ PHP_FE(phpwm_report_button_release, NULL)
 PHP_FE(phpwm_report_button_press, NULL)
 PHP_FE(phpwm_get_last_button_release, NULL)
 PHP_FE(phpwm_get_last_button_press, NULL)
-{	NULL, NULL, NULL}
+PHP_FE(phpwm_set_drag_state, NULL)
+PHP_FE(phpwm_get_drag_state, NULL)
+PHP_FE(phpwm_set_window_state, NULL)
+PHP_FE(phpwm_get_window_state, NULL)
+{	NULL, NULL, NULL} /* this last null line is important for some reason */
 };
 
 /*
