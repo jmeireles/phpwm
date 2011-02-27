@@ -119,20 +119,36 @@ class phpwm_core{
 		}
 	}
 	function MotionNotify($arrArgs){
-		echo "Motion: event:{$arrArgs['event']} child:{$arrArgs['child']} state: ".phpwm_get_drag_state($arrArgs['event'])."\n";
-		if (phpwm_get_drag_state($arrArgs['event'])==PHPWM_DRAG_DRAGGING){
-			phpwm_move_window($arrArgs['event'], $arrArgs['event_x'], $arrArgs['event_y']);
-		}
+//		echo "Motion: event:{$arrArgs['event']} child:{$arrArgs['child']} state: ".phpwm_get_drag_state($arrArgs['event'])."\n";
+//		if (phpwm_get_drag_state($arrArgs['event'])==PHPWM_DRAG_DRAGGING){
+//			var_export($arrArgs);
+//			phpwm_move_window($arrArgs['event'], ($arrArgs['event_x']), ($arrArgs['event_y']));
+//		}
 	}
 	function singleclick($arrArgs){
-		//see if the button is still down
-		if (phpwm_get_last_button_release($arrArgs['event']) < phpwm_get_last_button_press($arrArgs['event'])){
-			echo "Button is still down on : {$arrArgs['event']}\n";
-			phpwm_set_drag_state($arrArgs['event'], PHPWM_DRAG_DRAGGING);
-			echo "drag state set to: ".phpwm_get_drag_state($arrArgs['event'])."\n";
-		} else {
-			echo "Button has been released\n";
-			phpwm_set_drag_state($arrArgs['event'], PHPWM_DRAG_NORMAL);
+		// which mouse button is stored in : $arrArgs['detail]  // 4 & 5 are scroll wheel
+		switch($arrArgs['detail']){
+			case 1:
+			if (phpwm_get_last_button_release($arrArgs['event']) < phpwm_get_last_button_press($arrArgs['event'])){
+				echo "Button is still down on : {$arrArgs['event']}\n";
+				phpwm_set_drag_state($arrArgs['event'], PHPWM_DRAG_DRAGGING);
+			} else {
+				echo "Button has been released\n";
+				phpwm_set_drag_state($arrArgs['event'], PHPWM_DRAG_NORMAL);
+			}
+		break;
+			case 4:
+				if (phpwm_get_window_state($arrArgs['event'])==PHPWM_STATE_NORMAL){
+					$arrGeom = phpwm_get_geometry($arrArgs['event']);
+					phpwm_resize_window($arrArgs['event'], $arrGeom['width']+10, $arrGeom['height']+10);
+				}
+				break;
+			case 5:
+				if (phpwm_get_window_state($arrArgs['event'])==PHPWM_STATE_NORMAL){
+					$arrGeom = phpwm_get_geometry($arrArgs['event']);
+					phpwm_resize_window($arrArgs['event'], $arrGeom['width']-10, $arrGeom['height']-10);
+				}
+				break;
 		}
 	}
 
@@ -140,7 +156,7 @@ class phpwm_core{
 		echo "Double Click Event \n";
 		if (phpwm_get_window_state($arrArgs['event'])==PHPWM_STATE_NORMAL){
 			var_export($arrArgs);
-			phpwm_set_last_window_pos($arrArgs['event'], 20, 20, 200, 200);
+			
 			$this->Maximize($arrArgs['event']);
 		} else {
 			$this->restore($arrArgs['event']);
@@ -148,19 +164,17 @@ class phpwm_core{
 	}
 
 	function Maximize($intWindowid){
-		echo "set max\n";
-		
+		$arrGeom = phpwm_get_geometry($intWindowid);
+		phpwm_set_last_window_pos($intWindowid, $arrGeom['x'], $arrGeom['y'], $arrGeom['width'], $arrGeom['height']);
 		phpwm_set_window_state($intWindowid, PHPWM_STATE_MAXIMIZED);
 		phpwm_resize_window($intWindowid, phpwm_config_width_in_pixels()-12, phpwm_config_height_in_pixels()-12);
 		phpwm_move_window($intWindowid, 0, 0);
 	}
 	function restore($intWindowid){
-		echo "set restored\n";
 		$arrPos = phpwm_get_last_window_pos($intWindowid);
-		var_export($arrPos);
 		phpwm_set_window_state($intWindowid, PHPWM_STATE_NORMAL);
 		phpwm_resize_window($intWindowid, floor(phpwm_config_width_in_pixels()/2), floor(phpwm_config_height_in_pixels()/2));
-		phpwm_move_window($intWindowid, 20, 20);
+		phpwm_move_window($intWindowid, $arrPos['x'], $arrPos['y']);
 	}
 	
 }

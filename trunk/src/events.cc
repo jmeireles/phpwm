@@ -31,7 +31,7 @@ using namespace std;
 void watch_events() {
 	xcb_generic_event_t *event;
 	while ((event = xcb_wait_for_event(xconnection))) {
-		cout << "*** New Event *** " << xcb_event_get_label(event->response_type) << endl;
+		//cout << "*** New Event *** " << xcb_event_get_label(event->response_type) << endl;
 		//idealy, we should probably fork on events? so several can happen at once
 		switch (event->response_type & ~0x80) {
 		case XCB_BUTTON_PRESS:
@@ -310,23 +310,28 @@ void event_enter_notify(xcb_generic_event_t* evt) {
 }
 void event_motion_notify(xcb_generic_event_t* evt) {
 	xcb_motion_notify_event_t *e = (xcb_motion_notify_event_t *) evt;
-	php_args Args;
-	Args = php_args();
-	Args.add("response_type", xcb_event_get_label(e->response_type));
-	Args.add("detail", e->detail);
-	Args.add("sequence", e->sequence);
-	Args.add("time", e->time);
-	Args.add("root", e->root);
-	Args.add("event", e->event);
-	Args.add("child", e->child);
-	Args.add("root_x", e->root_x);
-	Args.add("root_y", e->root_y);
-	Args.add("event_x", e->event_x);
-	Args.add("event_y", e->event_y);
-	Args.add("state", e->state);
-	Args.add("same_screen", e->same_screen);
-	Args.add("pad0", e->pad0);
-	runscript((char*) "core.php", Args);
+	if (phpwm_get_drag_state((int) e->event) == 1){
+		//do the window draging straight in C++, its allot of events
+		phpwm_move_window((int) e->event, (int) e->event_x, (int) e->event_y);
+	} else {
+		php_args Args;
+		Args = php_args();
+		Args.add("response_type", xcb_event_get_label(e->response_type));
+		Args.add("detail", e->detail);
+		Args.add("sequence", e->sequence);
+		Args.add("time", e->time);
+		Args.add("root", e->root);
+		Args.add("event", e->event);
+		Args.add("child", e->child);
+		Args.add("root_x", e->root_x);
+		Args.add("root_y", e->root_y);
+		Args.add("event_x", e->event_x);
+		Args.add("event_y", e->event_y);
+		Args.add("state", e->state);
+		Args.add("same_screen", e->same_screen);
+		Args.add("pad0", e->pad0);
+		runscript((char*) "core.php", Args);
+	}
 
 }
 void event_leave_notify(xcb_generic_event_t* evt) {

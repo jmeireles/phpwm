@@ -58,34 +58,34 @@ class class_client {
 	}
 
 public:
-	void setLastWindowPosition(int x, int y, int w, int h){
+	void setLastWindowPosition(int x, int y, int w, int h) {
 		lastWindowPos[0] = x;
 		lastWindowPos[1] = y;
 		lastWindowPos[2] = w;
 		lastWindowPos[3] = h;
 	}
-	int* getLastWindowPosition(){
+	int* getLastWindowPosition() {
 		return lastWindowPos;
 	}
-	void setButtonPress(int intTime){
+	void setButtonPress(int intTime) {
 		lastButtonPress = intTime;
 	}
-	int getButtonPress(){
+	int getButtonPress() {
 		return lastButtonPress;
 	}
-	void setButtonRelease(int intTime){
+	void setButtonRelease(int intTime) {
 		lastButtonRelease = intTime;
 	}
-	int getButtonRelease(){
+	int getButtonRelease() {
 		return lastButtonRelease;
 	}
-	int getWindowState(){
+	int getWindowState() {
 		return currentWindowState;
 	}
-	void setWindowState(int state){
+	void setWindowState(int state) {
 		currentWindowState = state;
 	}
-	int getDragState(){
+	int getDragState() {
 		return currentDragState;
 	}
 	void setDragState(int state) {
@@ -94,7 +94,7 @@ public:
 	class_client(xcb_window_t c) {
 		window = c;
 		attr = xcb_get_window_attributes_reply(xconnection, xcb_get_window_attributes(xconnection, c), NULL);
-//		window_class = 0;
+		//		window_class = 0;
 	}
 
 	class_client() {
@@ -103,22 +103,22 @@ public:
 
 	void takeOwnership() {
 		registerWindowEvents();
-//		php_args Args;
-//		Args = php_args();
-//		Args.add("action", "event_configure_request");
-//		Args.add("id", getId());
-//		runscript("core.php", Args);
+		//		php_args Args;
+		//		Args = php_args();
+		//		Args.add("action", "event_configure_request");
+		//		Args.add("id", getId());
+		//		runscript("core.php", Args);
 	}
 	void setParentWindow(int newParent) {
 		parent_window = (xcb_window_t) newParent;
 	}
-	void setChildWindow(int newChild){
+	void setChildWindow(int newChild) {
 		child_window = (xcb_window_t) newChild;
 	}
-	int getChildWindow(){
+	int getChildWindow() {
 		return (int) child_window;
 	}
-	int getParentWindow(){
+	int getParentWindow() {
 		return (int) parent_window;
 	}
 	void setWindowClass(int windowclass) {
@@ -150,14 +150,14 @@ WindowMap windowlistmap;
 void destroy() {
 	xcb_disconnect(xconnection);
 }
-void startup_actions(){
+void startup_actions() {
 	php_args Args;
 	Args = php_args();
 	Args.add("action", "application_startup");
 	Args.add("root", screen->root);
 	Args.add("display", display_string);
 
-	runscript((char*)"core.php", Args);
+	runscript((char*) "core.php", Args);
 }
 
 int manage() {
@@ -186,11 +186,11 @@ int manage() {
 	for (i = 0; i < len; i++) {
 		windowlistmap.insert(pair<int, class_client> (children[i], children[i]));
 	}
-//	WindowMap::iterator iter = windowlistmap.begin();
-//	while (iter != windowlistmap.end()) {
-//		iter->second.takeOwnership();
-//		iter++;
-//	}
+	//	WindowMap::iterator iter = windowlistmap.begin();
+	//	while (iter != windowlistmap.end()) {
+	//		iter->second.takeOwnership();
+	//		iter++;
+	//	}
 	mask = XCB_CW_EVENT_MASK;
 
 	values[0] = XCB_EVENT_MASK_SUBSTRUCTURE_REDIRECT | XCB_EVENT_MASK_STRUCTURE_NOTIFY | XCB_EVENT_MASK_SUBSTRUCTURE_NOTIFY;
@@ -202,7 +202,6 @@ int manage() {
 	watch_events();
 	return 0;
 }
-
 
 void manageNewWindow(xcb_window_t newscreen) {
 	windowlistmap.insert(pair<int, class_client> (newscreen, newscreen));
@@ -252,9 +251,9 @@ vector<int> phpwm_window_list() {
 	WindowMap::iterator iter = windowlistmap.begin();
 	while (iter != windowlistmap.end()) {
 		//cout << "window list:" << iter->first << endl;
-//		if (!iter->second.isChild()) {
-			arr.push_back(iter->first);
-//		}
+		//		if (!iter->second.isChild()) {
+		arr.push_back(iter->first);
+		//		}
 		iter++;
 	}
 	return arr;
@@ -319,7 +318,7 @@ int phpwm_window_unmap(int windowId) {
 	return windowId;
 }
 
-int phpwm_move_window(int windowId, int x, int y) {
+int phpwm_move_windowx(int windowId, int x, int y) {
 	cout << "phpwm_move_window " << windowId << " x:" << x << " y:" << y << endl;
 	const uint32_t values[] = { x, y };
 	xcb_configure_window(xconnection, (xcb_window_t) windowId, XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y, values);
@@ -361,15 +360,15 @@ int phpwm_reparent_window(int windowId, int newWindowId) {
 	return newWindowId;
 }
 
-int phpwm_get_child_window(int windowId){
+int phpwm_get_child_window(int windowId) {
 	return windowlistmap.find(windowId)->second.getChildWindow();
 }
 
-int phpwm_get_parent_window(int windowId){
+int phpwm_get_parent_window(int windowId) {
 	return windowlistmap.find(windowId)->second.getParentWindow();
 }
 
-int phpwm_window_subscribe_events(int windowId){
+int phpwm_window_subscribe_events(int windowId) {
 	uint32_t mask = 0;
 	uint32_t values[2];
 	mask = XCB_CW_EVENT_MASK;
@@ -379,38 +378,74 @@ int phpwm_window_subscribe_events(int windowId){
 	xcb_flush(xconnection);
 	return windowId;
 }
-int phpwm_report_button_press(int windowId, int timestamp){
+int phpwm_report_button_press(int windowId, int timestamp) {
 	windowlistmap.find(windowId)->second.setButtonPress(timestamp);
 	return windowId;
 }
-int phpwm_report_button_release(int windowId, int timestamp){
+int phpwm_report_button_release(int windowId, int timestamp) {
 	windowlistmap.find(windowId)->second.setButtonRelease(timestamp);
 	return windowId;
 }
-int phpwm_get_last_button_press(int windowId){
+int phpwm_get_last_button_press(int windowId) {
 	return windowlistmap.find(windowId)->second.getButtonPress();
 }
-int phpwm_get_last_button_release(int windowId){
+int phpwm_get_last_button_release(int windowId) {
 	return windowlistmap.find(windowId)->second.getButtonRelease();
 }
 
-int phpwm_get_window_state(int windowId){
+int phpwm_get_window_state(int windowId) {
 	return windowlistmap.find(windowId)->second.getWindowState();
 }
 
-void phpwm_set_window_state(int windowId, int state){
+void phpwm_set_window_state(int windowId, int state) {
 	windowlistmap.find(windowId)->second.setWindowState(state);
 }
-int phpwm_get_drag_state(int windowId){
+int phpwm_get_drag_state(int windowId) {
 	return windowlistmap.find(windowId)->second.getDragState();
 }
-void phpwm_set_drag_state(int windowId, int state){
+void phpwm_set_drag_state(int windowId, int state) {
 	windowlistmap.find(windowId)->second.setDragState(state);
 }
 
-void phpwm_set_last_window_pos(int windowId, int x, int y, int w, int h){
-	windowlistmap.find(windowId)->second.setLastWindowPosition(x,y,w,h);
+void phpwm_set_last_window_pos(int windowId, int x, int y, int w, int h) {
+	windowlistmap.find(windowId)->second.setLastWindowPosition(x, y, w, h);
 }
-int* phpwm_get_last_window_pos(int windowId){
+int* phpwm_get_last_window_pos(int windowId) {
 	return windowlistmap.find(windowId)->second.getLastWindowPosition();
+}
+
+xcb_get_geometry_reply_t* phpwm_get_geometry(int windowId) {
+	return xcb_get_geometry_reply(xconnection, xcb_get_geometry(xconnection, (xcb_drawable_t) windowId), NULL);
+}
+
+int phpwm_move_window(int windowId, int rel_x, int rel_y) {
+	xcb_get_geometry_reply_t *geom;
+	int x;
+	int y;
+	/* Get window geometry. */
+	geom = xcb_get_geometry_reply(xconnection, xcb_get_geometry(xconnection, (xcb_drawable_t) windowId), NULL);
+	if (NULL == geom) {
+		return 0;
+	}
+	x = rel_x;
+	y = rel_y;
+	if (x < 0) {
+		x = 0;
+	}
+	if (y < 0) {
+		y = 0;
+	}
+	if (y + geom->height + geom->border_width * 2 > screen->height_in_pixels) {
+		y = screen->height_in_pixels - (geom->height + geom->border_width * 2);
+	}
+	if (x + geom->width + geom->border_width * 2 > screen->width_in_pixels) {
+		x = screen->width_in_pixels - (geom->width + geom->border_width * 2);
+	}
+
+	const uint32_t values[] = { x, y };
+	xcb_configure_window(xconnection, (xcb_window_t) windowId, XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y, values);
+	xcb_flush(xconnection);
+
+	free(geom);
+	return windowId;
 }

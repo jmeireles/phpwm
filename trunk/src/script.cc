@@ -22,6 +22,7 @@
 #include <sstream>
 #include <cstddef>
 #include <map>
+#include <xcb/xcb.h>
 
 using namespace std;
 
@@ -284,16 +285,37 @@ PHP_FUNCTION(phpwm_set_last_window_pos){
 	RETURN_NULL();
 }
 PHP_FUNCTION(phpwm_get_last_window_pos){
-	int windownum, i;
+	int windownum;
 	int* retval;
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, (char*)"l", &windownum) == FAILURE) {
 		return;
 	}
 	retval = phpwm_get_last_window_pos(windownum);
 	array_init(return_value);
-	for (i=0; i < 4 ; i++) {
-		add_next_index_long(return_value, retval[i]);
+	add_assoc_long(return_value, "x", retval[0]);
+	add_assoc_long(return_value, "y", retval[1]);
+	add_assoc_long(return_value, "w", retval[2]);
+	add_assoc_long(return_value, "h", retval[3]);
+}
+
+PHP_FUNCTION(phpwm_get_geometry){
+	xcb_get_geometry_reply_t* geom;
+	int windownum;
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, (char*)"l", &windownum) == FAILURE) {
+		return;
 	}
+
+	geom = phpwm_get_geometry(windownum);
+	array_init(return_value);
+	add_assoc_long(return_value, "depth", geom->depth);
+	add_assoc_long(return_value, "root", geom->root);
+	add_assoc_long(return_value, "x", geom->x);
+	add_assoc_long(return_value, "y", geom->y);
+	add_assoc_long(return_value, "width", geom->width);
+	add_assoc_long(return_value, "height", geom->height);
+	add_assoc_long(return_value, "border_width", geom->border_width);
+
+
 }
 
 static void log_message(char *message) {
@@ -333,6 +355,7 @@ PHP_FE(phpwm_set_window_state, NULL)
 PHP_FE(phpwm_get_window_state, NULL)
 PHP_FE(phpwm_set_last_window_pos, NULL)
 PHP_FE(phpwm_get_last_window_pos, NULL)
+PHP_FE(phpwm_get_geometry, NULL)
 {	NULL, NULL, NULL} /* this last null line is important for some reason */
 };
 
@@ -379,13 +402,3 @@ int runscript(char* name, php_args args) {
 	return 0;
 }
 
-int execute_test(int argc, char **argv) {
-	char *php_code = (char*) "include 'scripts/core.php';";
-	php_embed_module.log_message = log_message;
-	php_embed_module.sapi_error = sapi_error;
-	PHP_EMBED_START_BLOCK(argc, argv);
-					zend_startup_module(&app_module_entry);
-					zend_eval_string(php_code, NULL, (char*) "Embedded code" TSRMLS_CC);
-				PHP_EMBED_END_BLOCK();
-	return 0;
-}

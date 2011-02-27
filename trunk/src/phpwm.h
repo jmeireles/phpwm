@@ -52,6 +52,7 @@ void phpwm_set_window_state(int, int);
 int phpwm_get_window_state(int);
 void phpwm_set_last_window_pos(int, int, int, int, int);
 int* phpwm_get_last_window_pos(int);
+xcb_get_geometry_reply_t* phpwm_get_geometry(int);
 
 void watch_events();
 extern xcb_connection_t *xconnection;
