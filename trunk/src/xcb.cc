@@ -198,7 +198,6 @@ int manage() {
 	cookie = xcb_change_window_attributes_checked(xconnection, screen->root, mask, values);
 	error = xcb_request_check(xconnection, cookie);
 	//start looping events;
-	startup_actions();
 	watch_events();
 	return 0;
 }
@@ -290,7 +289,7 @@ int phpwm_window_create_window(int windowId, int width, int height, int x, int y
 	screen->root_visual, /* visual              */
 	XCB_CW_BACK_PIXEL | XCB_CW_EVENT_MASK, values); /* masks, not used yet */
 	//	xcb_map_window (xconnection, windowId);
-	//	xcb_flush (xconnection);
+	//xcb_flush (xconnection);
 	windowlistmap.insert(pair<int, class_client> (windowId, windowId));
 
 	windowlistmap.find(windowId)->second.setWindowClass(windowclass);

@@ -39,11 +39,14 @@ class phpwm_core{
 
 	}
 	function application_startup($arrArgs){
-		$strApp =  "/usr/bin/xterm -display {$arrArgs['display']}";
-		$strCommand = "nohup {$strApp} > /dev/null 2> /dev/null & echo $!";
-		echo "Spawn: $strCommand \n";
-		$PID = shell_exec($strCommand);
-		echo($PID);
+		$arrDir = scandir("./scripts/startup");
+		foreach($arrDir as $strFile){
+			if (substr($strFile, -3) == "php"){
+				include_once './scripts/startup/'.$strFile;
+				$strClassName = substr($strFile, 0, -4);
+				$objApp = new $strClassName($this, $arrArgs);
+			}
+		}
 	}
 	function event_map_request($arrArgs){
 		var_export($arrArgs);
@@ -176,7 +179,12 @@ class phpwm_core{
 		phpwm_resize_window($intWindowid, floor(phpwm_config_width_in_pixels()/2), floor(phpwm_config_height_in_pixels()/2));
 		phpwm_move_window($intWindowid, $arrPos['x'], $arrPos['y']);
 	}
-	
+	function CreateNotify($arrArgs){
+		
+	}
+	function MapNotify($arrArgs){
+		
+	}
 }
 
 ?>

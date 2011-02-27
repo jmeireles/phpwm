@@ -21,6 +21,7 @@
 int openDisplay();
 void manageNewWindow(xcb_window_t);
 void destroy();
+void startup_actions();
 int runscript (char*, int, char**);
 int phpwm_config_width_in_pixels();
 int phpwm_config_height_in_pixels();

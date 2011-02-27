@@ -30,8 +30,9 @@ using namespace std;
 
 void watch_events() {
 	xcb_generic_event_t *event;
+	startup_actions();
 	while ((event = xcb_wait_for_event(xconnection))) {
-		//cout << "*** New Event *** " << xcb_event_get_label(event->response_type) << endl;
+		cout << "*** New Event *** " << xcb_event_get_label(event->response_type) << endl;
 		//idealy, we should probably fork on events? so several can happen at once
 		switch (event->response_type & ~0x80) {
 		case XCB_BUTTON_PRESS:
