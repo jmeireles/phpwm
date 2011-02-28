@@ -1,7 +1,10 @@
 <?php
 class xterm {
 	function __construct($core, $arrArgs){
-		$this->runApp("/usr/bin/xterm -display {$arrArgs['display']}");
+	if (isset($arrArgs['display'])){
+			$disp = "-display {$arrArgs['display']}";
+		}
+		$this->runApp("/usr/bin/xterm {$disp}");
 
 	}
 	function runApp($strApp){

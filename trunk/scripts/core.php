@@ -210,6 +210,12 @@ class phpwm_core{
 	function MapNotify($arrArgs){
 
 	}
+	function UnmapNotify($arrArgs){
+		
+	}
+	function DestroyNotify(){
+		
+	}
 	function Expose($arrArgs){
 		var_export($arrArgs);
 
