@@ -74,3 +74,7 @@ void event_unmap_notify(xcb_generic_event_t*);
 void event_leave_notify(xcb_generic_event_t*);
 void event_motion_notify(xcb_generic_event_t*);
 void event_enter_notify(xcb_generic_event_t*);
+void event_expose(xcb_generic_event_t*);
+extern std::vector<int> phpwm_window_get_children(int);
+
+void phpwm_graphics_poly_rectangle(int, int, int, int, int);

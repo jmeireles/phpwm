@@ -124,8 +124,8 @@ class phpwm_core{
 	 */
 	function ConfigureRequest($arrArgs){
 		phpwm_resize_window($arrArgs['window'],$arrArgs['width'], $arrArgs['height']);
-		phpwm_move_window($arrArgs['window'],rand(0,100), rand(0,100));
-		phpwm_window_border($arrArgs['window'], 6);
+		//		phpwm_move_window($arrArgs['window'],rand(0,100), rand(0,100));
+		//		phpwm_window_border($arrArgs['window'], 6);
 		phpwm_window_subscribe_events($arrArgs['window']);
 		phpwm_set_window_state($arrArgs['window'], PHPWM_STATE_NORMAL);
 		phpwm_set_drag_state($arrArgs['window'], PHPWM_DRAG_NORMAL);
@@ -134,6 +134,17 @@ class phpwm_core{
 
 	}
 	function MapRequest($arrArgs){
+		var_export($arrArgs);
+		$arrGeom = phpwm_get_geometry($arrArgs['window']);
+		var_export($arrGeom);
+		$newparent = phpwm_window_generate_id();
+		phpwm_window_create_window($newparent, $arrGeom['width']+4, $arrGeom['height']+12, $arrGeom['x'], $arrGeom['y'], 1);
+		phpwm_window_border($newparent, 0);
+		phpwm_reparent_window($arrArgs['window'], $newparent);
+		phpwm_move_window($arrArgs['window'],2, 10);
+		phpwm_window_subscribe_events($newparent);
+		//attempt at repareenting
+		phpwm_window_map($newparent);
 		phpwm_window_map($arrArgs['window']);
 	}
 
@@ -198,6 +209,21 @@ class phpwm_core{
 	}
 	function MapNotify($arrArgs){
 
+	}
+	function Expose($arrArgs){
+		var_export($arrArgs);
+
+		$arrGeom = phpwm_get_geometry($arrArgs['window']);
+		phpwm_graphics_poly_rectangle($arrArgs['window'], 0, 0, $arrGeom['width'], 10);
+		//resize child windows?
+		$arrChildren = phpwm_window_get_children($arrArgs['window']);
+		if (count($arrChildren)==0){
+				phpwm_window_unmap($arrArgs['window']);
+		} else {
+			foreach($arrChildren as $child){
+				phpwm_resize_window($child, $arrGeom['width']-4, $arrGeom['height']-14);
+			}
+		}
 	}
 }
 

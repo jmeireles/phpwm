@@ -277,7 +277,7 @@ int phpwm_window_generate_id() {
 	return newID;
 }
 int phpwm_window_create_window(int windowId, int width, int height, int x, int y, int windowclass) {
-	const uint32_t values[] = { screen->white_pixel, XCB_EVENT_MASK_EXPOSURE };
+	//	const uint32_t values[] = { screen->white_pixel, XCB_EVENT_MASK_EXPOSURE };
 	xcb_create_window(xconnection, /* Connection          */
 	XCB_COPY_FROM_PARENT, /* depth (same as root)*/
 	windowId, /* window Id           */
@@ -287,9 +287,8 @@ int phpwm_window_create_window(int windowId, int width, int height, int x, int y
 	2, /* border_width        */
 	XCB_WINDOW_CLASS_INPUT_OUTPUT, /* class               */
 	screen->root_visual, /* visual              */
-	XCB_CW_BACK_PIXEL | XCB_CW_EVENT_MASK, values); /* masks, not used yet */
-	//	xcb_map_window (xconnection, windowId);
-	//xcb_flush (xconnection);
+	0, NULL);
+	xcb_flush(xconnection);
 	windowlistmap.insert(pair<int, class_client> (windowId, windowId));
 
 	windowlistmap.find(windowId)->second.setWindowClass(windowclass);
@@ -344,10 +343,13 @@ int phpwm_lower_window(int windowId) {
 }
 
 int phpwm_reparent_window(int windowId, int newWindowId) {
-	const uint32_t values[] = { (xcb_window_t) windowId, XCB_STACK_MODE_BELOW };
-	windowlistmap.find(windowId)->second.setParentWindow(newWindowId);
-	windowlistmap.find(newWindowId)->second.setChildWindow(windowId);
-	xcb_configure_window(xconnection, (xcb_window_t) windowId, XCB_CONFIG_WINDOW_SIBLING | XCB_CONFIG_WINDOW_STACK_MODE, values);
+	//	const uint32_t values[] = { (xcb_window_t) windowId, XCB_STACK_MODE_BELOW };
+	//	windowlistmap.find(windowId)->second.setParentWindow(newWindowId);
+	//	windowlistmap.find(newWindowId)->second.setChildWindow(windowId);
+	//	xcb_configure_window(xconnection, (xcb_window_t) windowId, XCB_CONFIG_WINDOW_SIBLING | XCB_CONFIG_WINDOW_STACK_MODE, values);
+	//	xcb_flush(xconnection);
+	//	return newWindowId;
+	xcb_reparent_window(xconnection, (xcb_window_t) windowId, (xcb_window_t) newWindowId, 200, 200);
 	xcb_flush(xconnection);
 	return newWindowId;
 }
@@ -441,27 +443,33 @@ int phpwm_move_window(int windowId, int rel_x, int rel_y) {
 	free(geom);
 	return windowId;
 }
-int phpwm_move_window_smooth(int windowId, int x, int y) {
-	int step = 5;
-	xcb_get_geometry_reply_t *g;
-	g = xcb_get_geometry_reply(xconnection, xcb_get_geometry(xconnection, (xcb_drawable_t) windowId), NULL);
-	//cout << "phpwm_move_window_smooth " << windowId << " x:" << x << " y:" << y << " screen x:" << g->x << " screen y:"<< g->y <<endl;
-	if (g->y - y > step){
-//		cout << "g->y - y >step" << endl;
-		y = g->y+step;
-	} else if (g->y - y < step){
-//		cout << "g->y - y < step" << endl;
-		y=g->y-step;
-	}
-	if (g->x-x >step){
-//		cout << "g->x-x >step" << endl;
-		x = g->x+step;
-	} else if (g->x-x < step){
-//		cout << "g->x-x < step" << endl;
-		x=g->x-step;
-	}
-	const uint32_t values[] = { x, y };
-	xcb_configure_window(xconnection, (xcb_window_t) windowId, XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y, values);
+
+int phpwm_graphics_create_gc(int windowId) {
+	int id;
+	id = xcb_generate_id(xconnection);
+    uint32_t        mask       = XCB_GC_FOREGROUND | XCB_GC_GRAPHICS_EXPOSURES | XCB_GC_BACKGROUND;
+    uint32_t        values[3]  = {screen->black_pixel, 0, screen->black_pixel};
+	xcb_create_gc(xconnection, id, windowId, mask, values);
+	return id;
+}
+void phpwm_graphics_poly_rectangle(int windowId, int x1, int y1, int x2, int y2){
+	xcb_rectangle_t      rectangles[] = {{x1, y1, x2, y2}};
+	xcb_poly_rectangle (xconnection, windowId, phpwm_graphics_create_gc(windowId), 1, rectangles);
 	xcb_flush(xconnection);
-	return windowId;
+}
+vector<int> phpwm_window_get_children(int windowId){
+	vector<int> arr;
+	xcb_window_t *children;
+	xcb_query_tree_reply_t *reply;
+	int len, i;
+	reply = xcb_query_tree_reply(xconnection, xcb_query_tree(xconnection, windowId), 0);
+//	if (NULL == reply) {
+////		return -1;
+//	}
+	len = xcb_query_tree_children_length(reply);
+	children = xcb_query_tree_children(reply);
+	for (i = 0; i < len; i++) {
+		arr.push_back((int) children[i]);
+	}
+	return arr;
 }

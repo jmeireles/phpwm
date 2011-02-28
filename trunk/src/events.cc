@@ -32,7 +32,8 @@ void watch_events() {
 	xcb_generic_event_t *event;
 	startup_actions();
 	while ((event = xcb_wait_for_event(xconnection))) {
-		//cout << "*** New Event *** " << xcb_event_get_label(event->response_type) << endl;
+		if (xcb_event_get_label(event->response_type)) {
+//		cout << "*** New Event *** " << xcb_event_get_label(event->response_type) << endl;
 		//idealy, we should probably fork on events? so several can happen at once
 		switch (event->response_type & ~0x80) {
 		case XCB_BUTTON_PRESS:
@@ -77,6 +78,9 @@ void watch_events() {
 		case XCB_ENTER_NOTIFY:
 			event_enter_notify(event);
 			break;
+		case XCB_EXPOSE:
+			event_expose(event);
+			break;
 		case 0:
 			event_error(event);
 			break;
@@ -85,6 +89,9 @@ void watch_events() {
 			printf("Unknown event: %d\n", event->response_type);
 			cout << "Unknown Event " << xcb_event_get_label(event->response_type) << endl;
 			break;
+		}
+		} else {
+			cout << "Unamed Event Error" << event->response_type << endl;
 		}
 	}
 	free(event);
@@ -98,7 +105,7 @@ void event_destroy_notify(xcb_generic_event_t* evt) {
 	php_args Args;
 	Args = php_args();
 	Args.add("response_type", xcb_event_get_label(e->response_type));
-	Args.add("pad0", e->pad0);
+//	Args.add("pad0", e->pad0);
 	Args.add("sequence", e->sequence);
 	Args.add("event", e->event);
 	Args.add("window", e->window);
@@ -109,12 +116,12 @@ void event_unmap_notify(xcb_generic_event_t* evt) {
 	php_args Args;
 	Args = php_args();
 	Args.add("response_type", xcb_event_get_label(e->response_type));
-	Args.add("pad0", e->pad0);
+//	Args.add("pad0", e->pad0);
 	Args.add("sequence", e->sequence);
 	Args.add("event", e->event);
 	Args.add("window", e->window);
 	Args.add("from_configure", e->from_configure);
-	Args.add("pad1[3]", e->pad1[3]);
+//	Args.add("pad1[3]", e->pad1[3]);
 	runscript((char*) "core.php", Args);
 }
 void event_configure_notify(xcb_generic_event_t* evt) {
@@ -122,7 +129,7 @@ void event_configure_notify(xcb_generic_event_t* evt) {
 	php_args Args;
 	Args = php_args();
 	Args.add("response_type", xcb_event_get_label(e->response_type));
-	Args.add("pad0", e->pad0);
+//	Args.add("pad0", e->pad0);
 	Args.add("sequence", e->sequence);
 	Args.add("event", e->event);
 	Args.add("window", e->window);
@@ -133,7 +140,7 @@ void event_configure_notify(xcb_generic_event_t* evt) {
 	Args.add("height", e->height);
 	Args.add("border_width", e->border_width);
 	Args.add("override_redirect", e->override_redirect);
-	Args.add("pad1", e->pad1);
+//	Args.add("pad1", e->pad1);
 	runscript((char*) "core.php", Args);
 }
 void event_configure_request(xcb_generic_event_t* evt) {
@@ -162,7 +169,7 @@ void event_map_request(xcb_generic_event_t* evt) {
 	Args = php_args();
 	Args.add("response_type", xcb_event_get_label(e->response_type));
 	Args.add("response_type", e->response_type);
-	Args.add("pad0", e->pad0);
+//	Args.add("pad0", e->pad0);
 	Args.add("sequence", e->sequence);
 	Args.add("parent", e->parent);
 	Args.add("window", e->window);
@@ -186,7 +193,7 @@ void event_button_press(xcb_generic_event_t* evt) {
 	Args.add("event_y", e->event_y);
 	Args.add("state", e->state);
 	Args.add("same_screen", e->same_screen);
-	Args.add("pad0", e->pad0);
+//	Args.add("pad0", e->pad0);
 	runscript((char*) "core.php", Args);
 }
 
@@ -207,7 +214,7 @@ void event_button_release(xcb_generic_event_t* evt) {
 	Args.add("event_y", e->event_y);
 	Args.add("state", e->state);
 	Args.add("same_screen", e->same_screen);
-	Args.add("pad0", e->pad0);
+//	Args.add("pad0", e->pad0);
 	runscript((char*) "core.php", Args);
 }
 
@@ -228,7 +235,7 @@ void event_key_press(xcb_generic_event_t* evt) {
 	Args.add("event_y", e->event_y);
 	Args.add("state", e->state);
 	Args.add("same_screen", e->same_screen);
-	Args.add("pad0", e->pad0);
+//	Args.add("pad0", e->pad0);
 	runscript((char*) "core.php", Args);
 }
 
@@ -249,7 +256,7 @@ void event_key_release(xcb_generic_event_t* evt) {
 	Args.add("event_y", e->event_y);
 	Args.add("state", e->state);
 	Args.add("same_screen", e->same_screen);
-	Args.add("pad0", e->pad0);
+//	Args.add("pad0", e->pad0);
 	runscript((char*) "core.php", Args);
 }
 
@@ -258,7 +265,7 @@ void event_create_notify(xcb_generic_event_t* evt) {
 	php_args Args;
 	Args = php_args();
 	Args.add("response_type", xcb_event_get_label(e->response_type));
-	Args.add("pad0", e->pad0);
+//	Args.add("pad0", e->pad0);
 	Args.add("sequence", e->sequence);
 	Args.add("parent", e->parent);
 	Args.add("window", e->window);
@@ -269,7 +276,7 @@ void event_create_notify(xcb_generic_event_t* evt) {
 	Args.add("height", e->height);
 	Args.add("border_width", e->border_width);
 	Args.add("override_redirect", e->override_redirect);
-	Args.add("pad1", e->pad1);
+//	Args.add("pad1", e->pad1);
 	runscript((char*) "core.php", Args);
 }
 
@@ -283,7 +290,7 @@ void event_map_notify(xcb_generic_event_t* evt) {
 	Args.add("event", e->event);
 	Args.add("window", e->window);
 	Args.add("override_redirect", e->override_redirect);
-	Args.add("pad1[3]", e->pad1[3]);
+//	Args.add("pad1[3]", e->pad1[3]);
 	runscript((char*) "core.php", Args);
 
 }
@@ -330,7 +337,7 @@ void event_motion_notify(xcb_generic_event_t* evt) {
 		Args.add("event_y", e->event_y);
 		Args.add("state", e->state);
 		Args.add("same_screen", e->same_screen);
-		Args.add("pad0", e->pad0);
+//		Args.add("pad0", e->pad0);
 		runscript((char*) "core.php", Args);
 	}
 
@@ -353,6 +360,20 @@ void event_leave_notify(xcb_generic_event_t* evt) {
 	Args.add("state", e->state);
 	Args.add("mode", e->mode);
 	Args.add("same_screen_focus", e->same_screen_focus);
+	runscript((char*) "core.php", Args);
+}
+void event_expose(xcb_generic_event_t* evt) {
+	xcb_expose_event_t *e = (xcb_expose_event_t *) evt;
+	php_args Args;
+	Args = php_args();
+	Args.add("response_type", xcb_event_get_label(e->response_type));
+	Args.add("sequence", e->sequence);
+	Args.add("window", e->window);
+	Args.add("x", e->x);
+	Args.add("y", e->y);
+	Args.add("width", e->width);
+	Args.add("height", e->height);
+	Args.add("count", e->count);
 	runscript((char*) "core.php", Args);
 }
 
