@@ -16,18 +16,22 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+require_once 'scripts/events.php';
 define("PHPWM_STATE_NORMAL", 0);
 define("PHPWM_STATE_MAXIMIZED", 1);
 define("PHPWM_STATE_MINIMIZED", 2);
+define("PHPWM_STATE_LEFT", 3);
+define("PHPWM_STATE_RIGHT", 4);
 
 define("PHPWM_DRAG_NORMAL", 0);
 define("PHPWM_DRAG_DRAGGING", 1);
 
 $core = new phpwm_core();
 class phpwm_core{
-	public $rootWin;
+	public $rootWin, $events;
 	public $_args = array();
 	function __construct(){
+		$this->events = new phpwm_events($this);
 		$this->_args = $GLOBALS['_PHPWM'];
 		if (isset($this->_args['action'])){
 			$this->{$this->_args['action']}($this->_args);
@@ -84,7 +88,40 @@ class phpwm_core{
 		phpwm_window_border($arrArgs['id'], 4);
 		phpwm_move_window($arrArgs['id'], $newx, $newy);
 	}
+	/*
+	 * Minimize and Maximize functions
+	 */
+	function Maximize($intWindowid){
+		$arrGeom = phpwm_get_geometry($intWindowid);
+		phpwm_set_last_window_pos($intWindowid, $arrGeom['x'], $arrGeom['y'], $arrGeom['width'], $arrGeom['height']);
+		phpwm_set_window_state($intWindowid, PHPWM_STATE_MAXIMIZED);
+		phpwm_resize_window($intWindowid, phpwm_config_width_in_pixels()-12, phpwm_config_height_in_pixels()-12);
+		phpwm_move_window($intWindowid, 0, 0);
+	}
+	function MaximizeLeft($intWindowid){
+		$arrGeom = phpwm_get_geometry($intWindowid);
+		phpwm_set_last_window_pos($intWindowid, $arrGeom['x'], $arrGeom['y'], $arrGeom['width'], $arrGeom['height']);
+		phpwm_set_window_state($intWindowid, PHPWM_STATE_LEFT);
+		phpwm_resize_window($intWindowid, floor((phpwm_config_width_in_pixels()-12)/2), phpwm_config_height_in_pixels()-12);
+		phpwm_move_window($intWindowid, 0, 0);
+	}
+	function MaximizeRight($intWindowid){
+		$arrGeom = phpwm_get_geometry($intWindowid);
+		phpwm_set_last_window_pos($intWindowid, $arrGeom['x'], $arrGeom['y'], $arrGeom['width'], $arrGeom['height']);
+		phpwm_set_window_state($intWindowid, PHPWM_STATE_RIGHT);
+		phpwm_resize_window($intWindowid, floor((phpwm_config_width_in_pixels()-12)/2), phpwm_config_height_in_pixels()-12);
+		phpwm_move_window($intWindowid, floor(phpwm_config_width_in_pixels()/2), 0);
+	}
+	function Restore($intWindowid){
+		$arrPos = phpwm_get_last_window_pos($intWindowid);
+		phpwm_set_window_state($intWindowid, PHPWM_STATE_NORMAL);
+		phpwm_resize_window($intWindowid, floor(phpwm_config_width_in_pixels()/2), floor(phpwm_config_height_in_pixels()/2));
+		phpwm_move_window($intWindowid, $arrPos['x'], $arrPos['y']);
+	}
 
+	/**
+	 * From here down, these are the raw events that xcb sends.
+	 */
 	function ConfigureRequest($arrArgs){
 		phpwm_resize_window($arrArgs['window'],$arrArgs['width'], $arrArgs['height']);
 		phpwm_move_window($arrArgs['window'],rand(0,100), rand(0,100));
@@ -99,91 +136,68 @@ class phpwm_core{
 	function MapRequest($arrArgs){
 		phpwm_window_map($arrArgs['window']);
 	}
+
 	function EnterNotify($arrArgs){
 		phpwm_raise_window($arrArgs['event']);
 	}
+
 	function LeaveNotify($arrArgs) {
 		//		phpwm_lower_window($arrArgs['event']);
 	}
+
 	function ButtonPress($arrArgs){
-		echo "time since last press:".($arrArgs['time'] - phpwm_get_last_button_press($arrArgs['event']))."\n";
-		if (($arrArgs['time'] - phpwm_get_last_button_press($arrArgs['event'])) < 150){
-			phpwm_report_button_press($arrArgs['event'], $arrArgs['time']);
-			$this->doubleclick($arrArgs);
-		} else {
-			phpwm_report_button_press($arrArgs['event'], $arrArgs['time']);
-			$this->singleclick($arrArgs);
+		echo "Button Clicked: ".$arrArgs['detail']."\n";
+		switch($arrArgs['detail']){
+			case 1:
+				echo "time since last press:".($arrArgs['time'] - phpwm_get_last_button_press($arrArgs['event']))."\n";
+				if (($arrArgs['time'] - phpwm_get_last_button_press($arrArgs['event'])) < 150){
+					phpwm_report_button_press($arrArgs['event'], $arrArgs['time']);
+					$this->events->doubleclick_button_1($arrArgs);
+				} else {
+					phpwm_report_button_press($arrArgs['event'], $arrArgs['time']);
+					$this->events->singleclick_button_1($arrArgs);
+				}
+				break;
+			case 2:
+				$this->events->singleclick_button_2($arrArgs);
+				//middle mouse button click
+				break;
+			case 3:
+				$this->events->singleclick_button_3($arrArgs);
+				//right mouse button click
+				break;
+			case 4:
+				$this->events->singleclick_button_4($arrArgs);
+				break;
+			case 5:
+				$this->events->singleclick_button_5($arrArgs);
+				break;
+			case 6:
+				$this->events->singleclick_button_6($arrArgs);
+				break;
+			case 7:
+				$this->events->singleclick_button_7($arrArgs);
+				break;
 		}
+
 	}
+
 	function ButtonRelease($arrArgs){
 		phpwm_report_button_release($arrArgs['event'], $arrArgs['time']);
 		if (phpwm_get_drag_state($arrArgs['event'])==PHPWM_DRAG_DRAGGING){
 			phpwm_set_drag_state($arrArgs['event'], PHPWM_DRAG_NORMAL);
 		}
 	}
+
 	function MotionNotify($arrArgs){
-//		echo "Motion: event:{$arrArgs['event']} child:{$arrArgs['child']} state: ".phpwm_get_drag_state($arrArgs['event'])."\n";
-//		if (phpwm_get_drag_state($arrArgs['event'])==PHPWM_DRAG_DRAGGING){
-//			var_export($arrArgs);
-//			phpwm_move_window($arrArgs['event'], ($arrArgs['event_x']), ($arrArgs['event_y']));
-//		}
-	}
-	function singleclick($arrArgs){
-		// which mouse button is stored in : $arrArgs['detail]  // 4 & 5 are scroll wheel
-		switch($arrArgs['detail']){
-			case 1:
-			if (phpwm_get_last_button_release($arrArgs['event']) < phpwm_get_last_button_press($arrArgs['event'])){
-				echo "Button is still down on : {$arrArgs['event']}\n";
-				phpwm_set_drag_state($arrArgs['event'], PHPWM_DRAG_DRAGGING);
-			} else {
-				echo "Button has been released\n";
-				phpwm_set_drag_state($arrArgs['event'], PHPWM_DRAG_NORMAL);
-			}
-		break;
-			case 4:
-				if (phpwm_get_window_state($arrArgs['event'])==PHPWM_STATE_NORMAL){
-					$arrGeom = phpwm_get_geometry($arrArgs['event']);
-					phpwm_resize_window($arrArgs['event'], $arrGeom['width']+10, $arrGeom['height']+10);
-				}
-				break;
-			case 5:
-				if (phpwm_get_window_state($arrArgs['event'])==PHPWM_STATE_NORMAL){
-					$arrGeom = phpwm_get_geometry($arrArgs['event']);
-					phpwm_resize_window($arrArgs['event'], $arrGeom['width']-10, $arrGeom['height']-10);
-				}
-				break;
-		}
+
 	}
 
-	function doubleclick($arrArgs){
-		echo "Double Click Event \n";
-		if (phpwm_get_window_state($arrArgs['event'])==PHPWM_STATE_NORMAL){
-			var_export($arrArgs);
-			
-			$this->Maximize($arrArgs['event']);
-		} else {
-			$this->restore($arrArgs['event']);
-		}
-	}
-
-	function Maximize($intWindowid){
-		$arrGeom = phpwm_get_geometry($intWindowid);
-		phpwm_set_last_window_pos($intWindowid, $arrGeom['x'], $arrGeom['y'], $arrGeom['width'], $arrGeom['height']);
-		phpwm_set_window_state($intWindowid, PHPWM_STATE_MAXIMIZED);
-		phpwm_resize_window($intWindowid, phpwm_config_width_in_pixels()-12, phpwm_config_height_in_pixels()-12);
-		phpwm_move_window($intWindowid, 0, 0);
-	}
-	function restore($intWindowid){
-		$arrPos = phpwm_get_last_window_pos($intWindowid);
-		phpwm_set_window_state($intWindowid, PHPWM_STATE_NORMAL);
-		phpwm_resize_window($intWindowid, floor(phpwm_config_width_in_pixels()/2), floor(phpwm_config_height_in_pixels()/2));
-		phpwm_move_window($intWindowid, $arrPos['x'], $arrPos['y']);
-	}
 	function CreateNotify($arrArgs){
-		
+
 	}
 	function MapNotify($arrArgs){
-		
+
 	}
 }
 

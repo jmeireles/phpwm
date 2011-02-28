@@ -35,14 +35,18 @@ public:
 
 	}
 	void add(std::string key, std::string val) {
-		args.insert(pair<string, string> (key, val));
+		if (!val.empty()){
+			args.insert(pair<string, string> (key, val));
+		}
 	}
 	void add(std::string key, int intval) {
 		std::string val;
 		std::stringstream out;
 		out << intval;
 		val = out.str();
-		args.insert(pair<string, string> (key, val));
+		if (!val.empty()){
+			args.insert(pair<string, string> (key, val));
+		}
 	}
 	int getSize() {
 		return args.size();

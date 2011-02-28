@@ -109,7 +109,6 @@ void event_unmap_notify(xcb_generic_event_t* evt) {
 	php_args Args;
 	Args = php_args();
 	Args.add("response_type", xcb_event_get_label(e->response_type));
-	Args.add("response_type", xcb_event_get_label(e->response_type));
 	Args.add("pad0", e->pad0);
 	Args.add("sequence", e->sequence);
 	Args.add("event", e->event);
@@ -313,7 +312,7 @@ void event_motion_notify(xcb_generic_event_t* evt) {
 	xcb_motion_notify_event_t *e = (xcb_motion_notify_event_t *) evt;
 	if (phpwm_get_drag_state((int) e->event) == 1){
 		//do the window draging straight in C++, its allot of events
-		cout << "Moving root_x:"<< e->root_x << " root_y:" << e->root_y << " event_x:" << e->event_x << " event_y:" << e->event_y << endl;
+		//cout << "Moving root_x:"<< e->root_x << " root_y:" << e->root_y << " event_x:" << e->event_x << " event_y:" << e->event_y << endl;
 		phpwm_move_window((int) e->event, (int) e->root_x, (int) e->root_y );
 	} else {
 		php_args Args;

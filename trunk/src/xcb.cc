@@ -445,7 +445,7 @@ int phpwm_move_window_smooth(int windowId, int x, int y) {
 	int step = 5;
 	xcb_get_geometry_reply_t *g;
 	g = xcb_get_geometry_reply(xconnection, xcb_get_geometry(xconnection, (xcb_drawable_t) windowId), NULL);
-	cout << "phpwm_move_window_smooth " << windowId << " x:" << x << " y:" << y << " screen x:" << g->x << " screen y:"<< g->y <<endl;
+	//cout << "phpwm_move_window_smooth " << windowId << " x:" << x << " y:" << y << " screen x:" << g->x << " screen y:"<< g->y <<endl;
 	if (g->y - y > step){
 //		cout << "g->y - y >step" << endl;
 		y = g->y+step;
