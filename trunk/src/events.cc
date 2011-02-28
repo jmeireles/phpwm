@@ -32,7 +32,7 @@ void watch_events() {
 	xcb_generic_event_t *event;
 	startup_actions();
 	while ((event = xcb_wait_for_event(xconnection))) {
-		cout << "*** New Event *** " << xcb_event_get_label(event->response_type) << endl;
+		//cout << "*** New Event *** " << xcb_event_get_label(event->response_type) << endl;
 		//idealy, we should probably fork on events? so several can happen at once
 		switch (event->response_type & ~0x80) {
 		case XCB_BUTTON_PRESS:
@@ -313,7 +313,8 @@ void event_motion_notify(xcb_generic_event_t* evt) {
 	xcb_motion_notify_event_t *e = (xcb_motion_notify_event_t *) evt;
 	if (phpwm_get_drag_state((int) e->event) == 1){
 		//do the window draging straight in C++, its allot of events
-		phpwm_move_window((int) e->event, (int) e->event_x, (int) e->event_y);
+		cout << "Moving root_x:"<< e->root_x << " root_y:" << e->root_y << " event_x:" << e->event_x << " event_y:" << e->event_y << endl;
+		phpwm_move_window((int) e->event, (int) e->root_x, (int) e->root_y );
 	} else {
 		php_args Args;
 		Args = php_args();

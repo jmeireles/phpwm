@@ -1,5 +1,6 @@
 killall phpwm
 Xephyr :1 &
+setenv DISPLAY 127.0.0.1:1
 make clean && make
 
 sleep 1

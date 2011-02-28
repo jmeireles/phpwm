@@ -317,13 +317,6 @@ int phpwm_window_unmap(int windowId) {
 	return windowId;
 }
 
-int phpwm_move_windowx(int windowId, int x, int y) {
-	cout << "phpwm_move_window " << windowId << " x:" << x << " y:" << y << endl;
-	const uint32_t values[] = { x, y };
-	xcb_configure_window(xconnection, (xcb_window_t) windowId, XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y, values);
-	xcb_flush(xconnection);
-	return windowId;
-}
 int phpwm_window_border(int windowId, int width) {
 	const uint32_t values[] = { width };
 	xcb_configure_window(xconnection, (xcb_window_t) windowId, XCB_CONFIG_WINDOW_BORDER_WIDTH, values);
@@ -446,5 +439,29 @@ int phpwm_move_window(int windowId, int rel_x, int rel_y) {
 	xcb_flush(xconnection);
 
 	free(geom);
+	return windowId;
+}
+int phpwm_move_window_smooth(int windowId, int x, int y) {
+	int step = 5;
+	xcb_get_geometry_reply_t *g;
+	g = xcb_get_geometry_reply(xconnection, xcb_get_geometry(xconnection, (xcb_drawable_t) windowId), NULL);
+	cout << "phpwm_move_window_smooth " << windowId << " x:" << x << " y:" << y << " screen x:" << g->x << " screen y:"<< g->y <<endl;
+	if (g->y - y > step){
+//		cout << "g->y - y >step" << endl;
+		y = g->y+step;
+	} else if (g->y - y < step){
+//		cout << "g->y - y < step" << endl;
+		y=g->y-step;
+	}
+	if (g->x-x >step){
+//		cout << "g->x-x >step" << endl;
+		x = g->x+step;
+	} else if (g->x-x < step){
+//		cout << "g->x-x < step" << endl;
+		x=g->x-step;
+	}
+	const uint32_t values[] = { x, y };
+	xcb_configure_window(xconnection, (xcb_window_t) windowId, XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y, values);
+	xcb_flush(xconnection);
 	return windowId;
 }

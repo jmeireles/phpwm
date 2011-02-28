@@ -34,6 +34,7 @@ int phpwm_window_create_window(int, int, int, int, int, int);
 int phpwm_window_map(int);
 int phpwm_window_unmap(int);
 int phpwm_move_window(int, int, int);
+int phpwm_move_window_smooth(int, int, int);
 int phpwm_resize_window(int, int, int);
 int phpwm_window_border(int, int);
 int phpwm_raise_window(int);
