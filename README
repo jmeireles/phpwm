@@ -1,0 +1,13 @@
+basic build instructions... I'll spend more time on this readme as time allows
+
+prerequisites:
+-php, compiled with --enable-embed
+-php-devel package if your platform requires it
+-xcb-devel packages
+
+
+make clean && make
+
+As phpwm is not quite ready for use as your desktop, the provided runtest.sh will start up an Xephyr session (xnest) and manage windows within that.
+
+
