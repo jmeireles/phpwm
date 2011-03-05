@@ -4,6 +4,7 @@ class phpwm_events {
 	public $_callbacks = array();
 	function __construct($objCore){
 		$this->_core = $objCore;
+		$this->xcb = $objCore->xcb;
 	}
 
 	function evt_CreateNotify($evt){

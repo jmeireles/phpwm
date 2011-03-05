@@ -3,16 +3,20 @@ require_once 'classes/class.events.php';
 require_once 'classes/class.window.php';
 require_once 'classes/class.graphics.php';
 require_once 'classes/class.common.php';
+/*
+ * make the connection global for now
+ */
 $wm = new phpwm("127.0.0.1:1");
 
 class phpwm{
+	public $xcb;
 	public $root = array();
 	public $windows = array();
 	public $_args = array();
 	function __construct($strDisplay){
 		$this->_parseArgs($_SERVER['argv']);
-		xcb_init($strDisplay);
-		$this->root['id'] = xcb_root_id();
+		$this->xcb = xcb_init($strDisplay);
+		$this->root['id'] = xcb_root_id($this->xcb);
 		$this->manageRoot();
 		$this->_startup();
 		$this->mainEventLoop();
@@ -45,7 +49,7 @@ class phpwm{
 			$disp = "";
 		}
 		$strCommand = "nohup {$strApp} {$disp}> /dev/null 2> /dev/null & echo $!";
-		echo "Running: $strCommand\n";
+		//echo "Running: $strCommand\n";
 		$PID = shell_exec($strCommand);
 	}
 	function _parseArgs($arrArgs){
@@ -58,7 +62,7 @@ class phpwm{
 	}
 	function manageRoot(){
 		echo "Setting events on {$this->root['id']}";
-		xcb_configure_window_events($this->root['id'], array(1048576, 131072, 524288));
+		xcb_configure_window_events($this->xcb, $this->root['id'], array(1048576, 131072, 524288));
 		//xcb_configure_window_events_root($this->root['id']);
 		//removed 131072
 		//register for events on the root window
@@ -66,7 +70,7 @@ class phpwm{
 	}
 	function mainEventLoop(){
 		$this->_events = new phpwm_events($this);
-		while ($e = xcb_wait_for_event()){
+		while ($e = xcb_wait_for_event($this->xcb)){
 			if (method_exists($this->_events, "evt_".$e['response_type'])){
 				//echo "***Event {$e['response_type']} start \n";
 				$this->_events->{"evt_".$e['response_type']}($e);
