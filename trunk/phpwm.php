@@ -6,6 +6,7 @@ require_once 'classes/class.common.php';
 /*
  * make the connection global for now
  */
+set_time_limit(0);
 $wm = new phpwm("127.0.0.1:1");
 
 class phpwm{
@@ -13,13 +14,18 @@ class phpwm{
 	public $root = array();
 	public $windows = array();
 	public $_args = array();
+	public $_ports = array();
 	function __construct($strDisplay){
 		$this->_parseArgs($_SERVER['argv']);
-		$this->xcb = xcb_init($strDisplay);
+		$this->xcb = xcb_init($this->_args['display']);
 		$this->root['id'] = xcb_root_id($this->xcb);
+		$this->_firstPort = 9500;
+		$this->_events = new phpwm_events($this);
+		$this->init_main_socket();
 		$this->manageRoot();
 		$this->_startup();
-		$this->mainEventLoop();
+		$this->_xcbEventLoop();
+		$this->socket_loop();
 	}
 	function registerEvent($id, $type, $object){
 		if (!isset($this->_events->_callbacks[$type])){
@@ -35,9 +41,9 @@ class phpwm{
 		var_export($this->_args);
 		foreach($arrDir as $strFile){
 			if (substr($strFile, -3) == "php"){
-//				include_once './autostart/'.$strFile;
-//				$strClassName = substr($strFile, 0, -4);
-//				$objApp = new $strClassName($this, $arrArgs);
+				//				include_once './autostart/'.$strFile;
+				//				$strClassName = substr($strFile, 0, -4);
+				//				$objApp = new $strClassName($this, $arrArgs);
 			}
 		}
 	}
@@ -68,17 +74,77 @@ class phpwm{
 		//register for events on the root window
 
 	}
-	function mainEventLoop(){
-		$this->_events = new phpwm_events($this);
-		while ($e = xcb_wait_for_event($this->xcb)){
-			if (method_exists($this->_events, "evt_".$e['response_type'])){
-				//echo "***Event {$e['response_type']} start \n";
-				$this->_events->{"evt_".$e['response_type']}($e);
-			} else {
-				echo "No Method for {$e['response_type']} event \n";
-				var_export($e);
+
+	function init_main_socket(){
+		//initialize the sockets before any forking happens.
+		$this->main_socket = socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
+		socket_bind($this->main_socket,'127.0.0.1',$this->_firstPort);
+		$this->_ports[$this->_firstPort] = "phpwm";
+		socket_listen($this->main_socket);
+		//socket_set_nonblock($this->main_socket);
+	}
+
+	function socket_loop(){
+		while(true)
+		{
+			if(($newc = socket_accept($this->main_socket)) !== false)
+			{
+				$input = socket_read($spawn, 1024) or die("Could not read input\n");
+				$input = trim($input);
+				var_export($input);
+				$this->execute_event(unserialise($input));
+				socket_close($newc);
+				//				echo "Client $newc has connected\n";
+				//				$clients[] = $newc;
+				//				foreach($clients as $client){
+				//
+				//				}
 			}
-				
+		}
+	}
+	function getNextPort(){
+		for ($i=$this->_firstPort; $i < $this->_firstPort+1000; $i++){
+			if (!isset($this->_ports[$i])){
+				return $i;
+			}
+		}
+	}
+
+	function execute_event($strData){
+		$evt = unserialize($strData);
+		switch($evt['event_type']){
+			case "xcb_events":
+				if (method_exists($this->_events, "evt_".$evt['data']['response_type'])){
+					//echo "***Event {$e['response_type']} start \n";
+					$this->_events->{"evt_".$evt['data']['response_type']}($evt['data']);
+				} else {
+					echo "No Method for {$evt['data']['response_type']} event \n";
+					var_export($evt['data']);
+				}
+				break;
+			default:
+				var_export($evt);
+		}
+	}
+
+	function _xcbEventLoop(){
+		$port = $this->getNextPort();
+		$this->_ports[$port]="xcb_events";
+		$pid = pcntl_fork();
+		if ($pid == -1) {
+			die('\ncould not fork\n');
+		} else if ($pid){
+			pcntl_wait($status);
+		} else {
+			echo "Fork Successfull\n";
+			//socket_listen($this->main_socket);
+			while ($e = xcb_wait_for_event($this->xcb)){
+				$socket = 
+				$strCmd = serialize(array("event_type"=>$this->_ports[$port], "data"=>$e));
+				socket_write($this->main_socket, $strCmd, strlen($strCmd));
+//				socket_close($socket);
+
+			}
 		}
 	}
 }
