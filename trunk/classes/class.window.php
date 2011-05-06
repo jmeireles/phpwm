@@ -42,11 +42,14 @@ class phpwm_window{
 	}
 
 	function map(){
+		echo "Window: map\n";
 		$objThis = $this;
 		$this->frame = xcb_generate_id($this->xcb);
+		
 		xcb_create_window($this->xcb, $this->frame, $this->_core->root['id'], ($this->width+($this->borderwidth*2)), ($this->height+$this->borderwidth+$this->titleheight), $this->x, $this->y, 1);
 
 		xcb_configure_window_events($this->xcb, $this->frame, array(32768, 4, 8, 256));
+echo "Window: step\n";
 		xcb_reparent_window($this->xcb, $this->id, $this->frame, $this->borderwidth, $this->titleheight);
 		xcb_map_window($this->xcb, $this->frame);
 		xcb_map_window($this->xcb, $this->id);
@@ -70,7 +73,7 @@ class phpwm_window{
 			$objThis->click_x = $evt['root_x'];
 			$objThis->click_y = $evt['root_y'];
 		});
-
+		echo "Window: map finish\n";
 	}
 
 	function drag($evt){
