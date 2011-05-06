@@ -49,13 +49,19 @@ class phpwm_window{
 		xcb_create_window($this->xcb, $this->frame, $this->_core->root['id'], ($this->width+($this->borderwidth*2)), ($this->height+$this->borderwidth+$this->titleheight), $this->x, $this->y, 1);
 
 		xcb_configure_window_events($this->xcb, $this->frame, array(32768, 4, 8, 256));
-echo "Window: step\n";
+
 		xcb_reparent_window($this->xcb, $this->id, $this->frame, $this->borderwidth, $this->titleheight);
+
 		xcb_map_window($this->xcb, $this->frame);
+		
 		xcb_map_window($this->xcb, $this->id);
+		
 		xcb_flush($this->xcb);
+		
 		$this->graphics = new graphics($this->_core, $this->frame);
+		
 		$this->background = $this->graphics->rectangle( "blue", array(0, 0, ($this->width+($this->borderwidth*2)), ($this->height+$this->borderwidth+$this->titleheight)));
+		echo "Window: step\n";
 		//$this->button = $this->graphics->rectangle("green", array($this->width-15, 2, 8, 8));
 		$this->button = new button($this->_core, $this->frame, 20, 20, $this->width-2, 2, "green", null);
 		
@@ -69,7 +75,7 @@ echo "Window: step\n";
 		
 		$this->_core->registerEvent($this->frame, "onButtonPress", function($evt) use ($objThis){
 			$objThis->raise($evt);
-			var_export($evt);
+			//var_export($evt);
 			$objThis->click_x = $evt['root_x'];
 			$objThis->click_y = $evt['root_y'];
 		});
