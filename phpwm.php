@@ -15,10 +15,11 @@ class phpwm{
 	public $windows = array();
 	public $_args = array();
 	public $_ports = array();
+	public $shutdown = false;
 	function __construct($strDisplay){
 		$this->_parseArgs($_SERVER['argv']);
 		//$this->xcb = xcb_init(isset($this->_args['display'])?$this->_args['display']:"127.0.0.1:0.0");
-		$this->xcb = xcb_init();
+		if ($this->xcb = xcb_init()) {
 		echo "xcb is ".$this->xcb ."\n";
 		$this->root['id'] = xcb_root_id($this->xcb);
 		$this->_firstPort = 9000+rand(0,1000);
@@ -27,6 +28,10 @@ class phpwm{
 		$this->init_main_socket();
 		$this->_startup();
 		$this->_xcbEventLoop();
+		} else {
+			echo "Unable to init xcb\n";
+			exit;
+		}
 		//$this->socket_loop();
 	}
 	function registerEvent($id, $type, $object){
@@ -72,8 +77,8 @@ class phpwm{
 	function manageRoot(){
 		echo "Setting events on {$this->root['id']}\n";
 		//xcb_configure_window_events_root($this->xcb, $this->root['id']);
-		xcb_configure_window_events($this->xcb, $this->root['id'], array(1048576, 131072, 524288));
-		//xcb_configure_window_events_root($this->root['id']);
+		//xcb_configure_window_events($this->xcb, $this->root['id'], array(1048576, 131072, 524288));
+		xcb_configure_window_events_root($this->xcb, $this->root['id']);
 		//removed 131072
 		//register for events on the root window
 
@@ -86,32 +91,50 @@ class phpwm{
 		$this->_ports[$this->_firstPort] = "phpwm";
 		socket_listen($this->main_socket);
 		socket_set_option($this->main_socket, SOL_SOCKET, SO_REUSEADDR, 1);
+		socket_set_option($this->main_socket, SOL_SOCKET, SO_DEBUG, 1);
 		//socket_set_nonblock($this->main_socket);
+		/**
+		$this->main_socket = stream_socket_server("tcp://0.0.0.0:".$this->_firstPort, $errno, $errstr);
+		$this->_ports[$this->_firstPort] = "phpwm";
+		if (!$socket) {
+			echo "$errstr ($errno)<br />\n";
+			exit;
+		}
+		**/
 	}
 
 	function socket_loop(){
 		echo "\nstarting main socket loop\n";
-		while(true)
+		while(!$this->shutdown)
 		{
 			if(($client = socket_accept($this->main_socket)) !== false) {
+				//socket_set_block($this->main_socket);
 				$input = "";
 				echo "Master: recieving\n";
-				//socket_set_block($this->main_socket);
+				
+				/**
 				while($buffer=socket_read($client,512)){
-					$input .= $buffer;
+				$input .= $buffer;
+				}
+				**/
+				if (false !== ($bytes = socket_recv($client, $input, 1024, MSG_WAITALL))) {
+					echo "Master: Read $bytes bytes from socket_recv(). Closing socket...\n";
+				} else {
+					echo "Master: socket_recv() failed; reason: " . socket_strerror(socket_last_error($client)) . "\n";
 				}
 					
 				echo "Master: recieved ".strlen($input)." bytes input\n";
-				socket_set_block($client);
 				socket_shutdown($client);
 				socket_close($client);
 					
 				//$input = socket_read($client, 1024, PHP_NORMAL_READ) or die("\nCould not read input\n");
 				$this->execute_event(trim($input));
 				//socket_set_nonblock($this->main_socket);
+				echo "Master: Cycle complete\n";
 			} else if (socket_last_error($this->main_socket) != 0){
 				echo "Master: error on master socket : ".socket_strerror(socket_last_error($this->main_socket))."\n";
 			}
+			usleep(100);
 		}
 	}
 	function getNextPort(){
