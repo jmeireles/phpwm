@@ -9,21 +9,25 @@ class graphics {
 		echo "graphics: xcb connection is {$this->xcb}\n";
 		//var_export($this->xcb);
 		$this->_window = $intWindow;
-		echo "graphics: getting colormap\n";
-		$this->_colormap = xcb_get_default_colormap($this->xcb);
-		echo "graphics: got the colormap\n";
+//		echo "graphics: getting colormap\n";
+//		if (!isset($this->_core->_colormap)){
+//			$this->_core->_colormap = xcb_get_default_colormap($this->xcb);
+		//}
+		//echo "graphics: got the colormap\n";
 		//xcb_create_colormap($this->xcb, $this->_colormap, $this->_window);
 		xcb_flush($this->xcb);
 		
 	}
 	function _getColor($color){
-		if (isset($this->_colors[$color])){
-			return $this->_colors[$color]; 
+		if (isset($this->_core->_colors[$color])){
+			echo "graphics:  fetching color $color:{$this->_core->_colors[$color]}\n";
+			return $this->_core->_colors[$color]; 
 		} else {
-			echo "graphics: _getColor start \n";
-			$this->_colors[$color] = xcb_alloc_named_color($this->xcb, $this->_colormap, $color);
-			echo "graphics: _getColor end \n";
-			return $this->_colors[$color]; 
+			//usleep(10000);
+			//echo "graphics: _getColor start on {$this->xcb}, {$this->_core->_colormap}, $color \n";
+			//$this->_core->_colors[$color] = xcb_alloc_named_color($this->xcb, $this->_core->_colormap, $color);
+			//echo "graphics: _getColor end \n";
+			//return $this->_core->_colors[$color]; 
 		}
 	}
 	

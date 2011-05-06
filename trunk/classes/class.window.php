@@ -60,10 +60,10 @@ class phpwm_window{
 		
 		$this->graphics = new graphics($this->_core, $this->frame);
 		
-		$this->background = $this->graphics->rectangle( "blue", array(0, 0, ($this->width+($this->borderwidth*2)), ($this->height+$this->borderwidth+$this->titleheight)));
+		$this->background = $this->graphics->rectangle( "Blue", array(0, 0, ($this->width+($this->borderwidth*2)), ($this->height+$this->borderwidth+$this->titleheight)));
 		echo "Window: step\n";
 		//$this->button = $this->graphics->rectangle("green", array($this->width-15, 2, 8, 8));
-		$this->button = new button($this->_core, $this->frame, 20, 20, $this->width-2, 2, "green", null);
+		$this->button = new button($this->_core, $this->frame, 20, 20, $this->width-2, 2, "Green", null);
 		
 		$this->_core->registerEvent($this->button->id, "onButtonPress", function($evt) use ($objThis){
 			$objThis->destroy();

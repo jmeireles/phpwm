@@ -15,15 +15,19 @@ class phpwm{
 	public $windows = array();
 	public $_args = array();
 	public $_ports = array();
+	public $_colors = array();
+	
 	public $shutdown = false;
 	function __construct($strDisplay){
 		$this->_parseArgs($_SERVER['argv']);
 		//$this->xcb = xcb_init(isset($this->_args['display'])?$this->_args['display']:"127.0.0.1:0.0");
-		if ($this->xcb = xcb_init()) {
+		var_export($this->_args);
+		if ($this->xcb = isset($this->_args['display'])?xcb_init($this->_args['display']):xcb_init()) {
 			echo "xcb is ".$this->xcb ."\n";
 			$this->root['id'] = xcb_root_id($this->xcb);
 			$this->_firstPort = 9000+rand(0,1000);
 			$this->_events = new phpwm_events($this);
+			$this->init_colors();
 			$this->manageRoot();
 			$this->init_main_socket();
 			$this->_startup();
@@ -83,6 +87,16 @@ class phpwm{
 		//register for events on the root window
 
 	}
+	function init_colors(){
+		$arrColors = array("Red", "Blue", "Green");
+		if (!isset($this->_colormap)){
+			$this->_colormap = xcb_get_default_colormap($this->xcb);
+		}
+		foreach($arrColors as $color){
+			$this->_colors[$color] = xcb_alloc_named_color($this->xcb, $this->_colormap, $color);
+		}
+	}
+	
 	function init_main_socket(){
 	}
 	function socket_loop(){
