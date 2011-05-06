@@ -39,6 +39,7 @@ class phpwm_events {
 
 	function evt_MapRequest($evt){
 		if (isset($this->_core->windows[$evt['window']])){
+			echo "Mapping existing window {$evt['window']}\n\n";
 			$this->_core->windows[$evt['window']]->map();
 		} else {
 			//TODO: Check that the parent is root?

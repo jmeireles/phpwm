@@ -7,7 +7,7 @@ require_once 'classes/class.common.php';
  * make the connection global for now
  */
 set_time_limit(0);
-$wm = new phpwm("127.0.0.1:1");
+$wm = new phpwm("127.0.0.1:0");
 
 class phpwm{
 	public $xcb;
@@ -17,15 +17,17 @@ class phpwm{
 	public $_ports = array();
 	function __construct($strDisplay){
 		$this->_parseArgs($_SERVER['argv']);
-		$this->xcb = xcb_init($this->_args['display']);
+		//$this->xcb = xcb_init(isset($this->_args['display'])?$this->_args['display']:"127.0.0.1:0.0");
+		$this->xcb = xcb_init();
+		echo "xcb is ".$this->xcb ."\n";
 		$this->root['id'] = xcb_root_id($this->xcb);
-		$this->_firstPort = 9500;
+		$this->_firstPort = 9000+rand(0,1000);
 		$this->_events = new phpwm_events($this);
-		$this->init_main_socket();
 		$this->manageRoot();
+		$this->init_main_socket();
 		$this->_startup();
 		$this->_xcbEventLoop();
-		$this->socket_loop();
+		//$this->socket_loop();
 	}
 	function registerEvent($id, $type, $object){
 		if (!isset($this->_events->_callbacks[$type])){
@@ -34,6 +36,7 @@ class phpwm{
 		array_push($this->_events->_callbacks[$type], array("id"=>$id, "callback"=>$object));
 	}
 	function _startup(){
+		echo "running startup\n";
 		$this->_execute("xterm");
 		$this->_execute("xsetroot \-mod 16 18 \-fg rgb:54/6/6 \-bg grey20");
 		$this->_execute("xsetroot \-cursor_name left_ptr \-fg white \-bg black");
@@ -67,7 +70,8 @@ class phpwm{
 		}
 	}
 	function manageRoot(){
-		echo "Setting events on {$this->root['id']}";
+		echo "Setting events on {$this->root['id']}\n";
+		//xcb_configure_window_events_root($this->xcb, $this->root['id']);
 		xcb_configure_window_events($this->xcb, $this->root['id'], array(1048576, 131072, 524288));
 		//xcb_configure_window_events_root($this->root['id']);
 		//removed 131072
@@ -81,24 +85,32 @@ class phpwm{
 		socket_bind($this->main_socket,'127.0.0.1',$this->_firstPort);
 		$this->_ports[$this->_firstPort] = "phpwm";
 		socket_listen($this->main_socket);
+		socket_set_option($this->main_socket, SOL_SOCKET, SO_REUSEADDR, 1);
 		//socket_set_nonblock($this->main_socket);
 	}
 
 	function socket_loop(){
+		echo "\nstarting main socket loop\n";
 		while(true)
 		{
-			if(($newc = socket_accept($this->main_socket)) !== false)
-			{
-				$input = socket_read($spawn, 1024) or die("Could not read input\n");
-				$input = trim($input);
-				var_export($input);
-				$this->execute_event(unserialise($input));
-				socket_close($newc);
-				//				echo "Client $newc has connected\n";
-				//				$clients[] = $newc;
-				//				foreach($clients as $client){
-				//
-				//				}
+			if(($client = socket_accept($this->main_socket)) !== false) {
+				$input = "";
+				echo "Master: recieving\n";
+				//socket_set_block($this->main_socket);
+				while($buffer=socket_read($client,512)){
+					$input .= $buffer;
+				}
+					
+				echo "Master: recieved ".strlen($input)." bytes input\n";
+				socket_set_block($client);
+				socket_shutdown($client);
+				socket_close($client);
+					
+				//$input = socket_read($client, 1024, PHP_NORMAL_READ) or die("\nCould not read input\n");
+				$this->execute_event(trim($input));
+				//socket_set_nonblock($this->main_socket);
+			} else if (socket_last_error($this->main_socket) != 0){
+				echo "Master: error on master socket : ".socket_strerror(socket_last_error($this->main_socket))."\n";
 			}
 		}
 	}
@@ -111,11 +123,11 @@ class phpwm{
 	}
 
 	function execute_event($strData){
-		$evt = unserialize($strData);
+		$evt = unserialize(trim($strData));
 		switch($evt['event_type']){
 			case "xcb_events":
 				if (method_exists($this->_events, "evt_".$evt['data']['response_type'])){
-					//echo "***Event {$e['response_type']} start \n";
+					echo "***Event ". $evt['data']['response_type'] ." start \n";
 					$this->_events->{"evt_".$evt['data']['response_type']}($evt['data']);
 				} else {
 					echo "No Method for {$evt['data']['response_type']} event \n";
@@ -134,15 +146,36 @@ class phpwm{
 		if ($pid == -1) {
 			die('\ncould not fork\n');
 		} else if ($pid){
-			pcntl_wait($status);
+			//pcntl_wait($status);
+			$this->socket_loop();
 		} else {
-			echo "Fork Successfull\n";
+			echo "Client: Fork Successfull -- using ".$this->xcb."\n";
 			//socket_listen($this->main_socket);
 			while ($e = xcb_wait_for_event($this->xcb)){
-				$socket = 
-				$strCmd = serialize(array("event_type"=>$this->_ports[$port], "data"=>$e));
-				socket_write($this->main_socket, $strCmd, strlen($strCmd));
-//				socket_close($socket);
+				echo "Client: event rcvd\n";
+				//echo "\n\tevent recieved: ".var_export($e, 1)."\n";
+				if ($socket = socket_create(AF_INET, SOCK_STREAM, SOL_TCP)) {
+					if (socket_connect($socket, "127.0.0.1", $this->_firstPort)){
+						$strCmd = serialize(array("event_type"=>$this->_ports[$port], "data"=>$e))."\n";
+						echo "Clent: writing ".strlen($strCmd)." bytes to socket\n";
+						if (socket_write($socket, $strCmd, strlen($strCmd)) == false) {
+							if (socket_last_error($socket) != 0) {
+								echo "Client: Socket Wrote Error".socket_strerror(socket_last_error($socket))."\n";
+							}
+							echo "Client: unable to write command : ".socket_strerror(socket_last_error($socket))."\n";
+						} else {
+							echo "Client: wrote to socket\n";
+						}
+
+					} else {
+						echo "Client: unable to connect to parent socket\n";
+					}
+					echo "Client: closing socket\n";
+					socket_close($socket);
+				} else {
+					echo "Client: unable to create socket\n";
+				}
+
 
 			}
 		}
