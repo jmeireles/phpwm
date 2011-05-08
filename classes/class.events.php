@@ -8,7 +8,6 @@ class phpwm_events {
 	}
 
 	function evt_CreateNotify($evt){
-		var_export($evt);
 		if ($evt['override_redirect']==0){
 			foreach($this->_core->windows as $win){
 				if ($win->frame == $evt['window']){
@@ -18,7 +17,6 @@ class phpwm_events {
 				}
 			}
 			if ($evt['parent'] == $this->_core->root['id']){
-				echo "Creating new window for ID {$evt['window']}\n";
 				$this->_core->windows[$evt['window']]= new phpwm_window($this->_core, $evt['window']);
 			}
 		}
@@ -88,19 +86,26 @@ class phpwm_events {
 	}
 
 	function evt_DestroyNotify($evt){
-		if (isset($this->_core->windows[$evt['window']])){
-			$this->_core->windows[$evt['window']]->destroy();
+		foreach($this->_callbacks['onDestroyNotify'] as $callback){
+			if ($callback['id'] == $evt['event']){
+				$callback['callback']($evt);
+			}
 		}
 	}
 	function evt_Expose($evt){
 		if (isset($this->_core->windows[$evt['window']])){
-			$this->_core->windows[$evt['window']]->expose();
+			$this->_core->windows[$evt['window']]->expose($evt);
 		} else {
 			foreach($this->_core->windows as $win){
 				if ($win->frame == $evt['window']){
 					$win->expose($evt);
 					return;
 				}
+			}
+		}
+		foreach($this->_callbacks['onExpose'] as $callback){
+			if ($callback['id'] == $evt['window']){
+				$callback['callback']($evt);
 			}
 		}
 	}
