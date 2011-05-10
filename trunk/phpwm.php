@@ -22,6 +22,7 @@ class phpwm{
 
 	public $shutdown = false;
 	function __construct($strDisplay){
+		$this->_checkReq();
 		$this->_parseArgs($_SERVER['argv']);
 		//$this->xcb = xcb_init(isset($this->_args['display'])?$this->_args['display']:"127.0.0.1:0.0");
 		var_export($this->_args);
@@ -40,6 +41,26 @@ class phpwm{
 			exit;
 		}
 		//$this->socket_loop();
+	}
+	function _checkReq(){
+		$abort = false;
+		if (!function_exists("msg_get_queue")){
+			echo "php is requred to installed with System V semaphore support (--enable-sysvmsg)\n";
+			$abort = true;
+		}
+		if (!function_exists("xcb_init")){
+			echo "the XCB extension is required\n";
+			$abort = true;			
+		}
+		if (!function_exists("pcntl_fork")){
+			echo "php is required to be insalled with Process Control support (--enable-pcntl)\n";
+			$abort = true;
+		}
+		
+		
+		if ($abort == true){
+			exit;
+		}
 	}
 	function registerEvent($id, $type, $object){
 		if (!isset($this->_events->_callbacks[$type])){
