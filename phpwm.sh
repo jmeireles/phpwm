@@ -1,3 +1,4 @@
-Xephyr :1 &
-sleep 1
-/usr/bin/php phpwm.php --display="127.0.0.1:0"
+Xephyr :20 &
+sleep 2
+
+/usr/bin/php phpwm.php --display=":20.0"
