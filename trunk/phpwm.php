@@ -3,6 +3,7 @@ require_once 'classes/class.events.php';
 require_once 'classes/class.window.php';
 require_once 'classes/class.graphics.php';
 require_once 'classes/class.common.php';
+require_once 'define.php';
 /*
  * make the connection global for now
  */
@@ -16,6 +17,8 @@ class phpwm{
 	public $_args = array();
 	public $_ports = array();
 	public $_colors = array();
+	public $_fonts = array();
+	public $_atoms = array();
 
 	public $shutdown = false;
 	function __construct($strDisplay){
@@ -27,9 +30,9 @@ class phpwm{
 			$this->root['id'] = xcb_root_id($this->xcb);
 			$this->_firstPort = 9000+rand(0,1000);
 			$this->_events = new phpwm_events($this);
+			$this->_prefetchAtoms();
 			$this->init_colors();
 			$this->manageRoot();
-			$this->init_main_socket();
 			$this->_startup();
 			$this->_xcbEventLoop();
 		} else {
@@ -89,14 +92,15 @@ class phpwm{
 			usleep(1000);
 			$this->windows[$win]->map();
 			usleep(1000);
-			$this->windows[$win]->configureFrame(array("window"=>$win, "x"=>50, "y"=>50, "width"=>300, "height"=>300));
+			$this->windows[$win]->configureFrame(array("window"=>$win, "x"=>50, "y"=>50, "width"=>306, "height"=>306));
 			usleep(1000);
 		}
+		usleep(3000);
 		xcb_configure_window_events_root($this->xcb, $this->root['id']);
 
 	}
 	function init_colors(){
-		$arrColors = array("Red", "Blue", "Green");
+		$arrColors = array("Red", "Blue", "Green", "Black", "White");
 		if (!isset($this->_colormap)){
 			$this->_colormap = xcb_get_default_colormap($this->xcb);
 		}
@@ -104,9 +108,34 @@ class phpwm{
 			$this->_colors[$color] = xcb_alloc_named_color($this->xcb, $this->_colormap, $color);
 		}
 	}
-
-	function init_main_socket(){
+	function getFont($strFont){
+		if (isset($this->_fonts[$strFont])){
+			return $this->_fonts[$strFont];
+		} else {
+			$this->_fonts[$strFont] = xcb_generate_id($this->xcb);
+			xcb_open_font($this->xcb, $this->_fonts[$strFont], $strFont);
+			return $this->_fonts[$strFont];
+		}
 	}
+	//need to look up most atoms at startup, we get a hang condition doing it mid-app;
+	function _prefetchAtoms(){
+		$arrAtoms = array(37, 39);
+		foreach($arrAtoms as $atom){
+			$this->getAtom($atom);
+		}
+	}
+	function getAtom($intAtom){
+		foreach($this->_atoms as $name=>$id){
+			if ($id == $intAtom){
+				return $name;
+			}
+		}
+		echo "Core: atom $intAtom not in cache, fetching\n";
+		usleep(3000); //fighting a race here...
+		$name = xcb_get_atom_name($this->xcb, $intAtom);
+		$this->_atoms[$name]= $intAtom;
+	}
+
 	function socket_loop(){
 		$ipc = msg_get_queue($this->_firstPort) ;
 		while(!$this->shutdown){

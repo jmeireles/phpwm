@@ -84,6 +84,14 @@ class phpwm_events {
 			$this->_core->windows[$evt['window']]->unmapFrame();
 		}
 	}
+	
+	function evt_PropertyNotify($evt){
+		foreach($this->_callbacks['onPropertyNotify'] as $callback){
+			if ($callback['id'] == $evt['window']){
+				$callback['callback']($evt);
+			}
+		}
+	}
 
 	function evt_DestroyNotify($evt){
 		foreach($this->_callbacks['onDestroyNotify'] as $callback){
